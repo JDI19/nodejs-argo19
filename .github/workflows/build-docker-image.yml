@@ -9,7 +9,7 @@ on:
         type: choice
         options:
           - index.js
-          - a.js
+          - index1.js
           - b.js
 
 jobs:
