@@ -1,15 +1,17 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'Dockerfile'
-      - 'index.js'
-      - 'package.json'
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      js_file:
+        description: "选择要构建的 JS 文件（不带路径）"
+        required: true
+        type: choice
+        options:
+          - index.js
+          - main.js
+          - a.js
+          - b.js
 
 jobs:
   build:
@@ -32,12 +34,19 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 🔥 关键步骤：将 repository owner 转小写
+      # 转换 owner 为小写
       - name: Convert owner to lowercase
         id: repo_owner
         run: echo "owner_lc=${OWNER,,}" >> $GITHUB_OUTPUT
         env:
           OWNER: ${{ github.repository_owner }}
+
+      # 解析 js 文件名为镜像名（去掉 .js 后缀）
+      - name: Generate image name
+        id: img
+        run: |
+          NAME=$(basename "${{ github.event.inputs.js_file }}" .js)
+          echo "name=${NAME}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -45,9 +54,8 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          # 使用转换后的小写 owner
           tags: |
-            ghcr.io/${{ steps.repo_owner.outputs.owner_lc }}/jdi19:2026
+            ghcr.io/${{ steps.repo_owner.outputs.owner_lc }}/${{ steps.img.outputs.name }}:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.description=HTTP Server
