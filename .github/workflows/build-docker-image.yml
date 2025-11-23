@@ -9,7 +9,7 @@ on:
         type: choice
         options:
           - index.js
-          - main.js
+          - index1.js
           - a.js
           - b.js
 
